@@ -1,0 +1,6 @@
+@PlaylistBuilder.Api_HostAddress = http://localhost:5263
+
+GET {{PlaylistBuilder.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
