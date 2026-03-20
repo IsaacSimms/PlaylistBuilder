@@ -19,7 +19,15 @@ public class ApiClient
 
     public ApiClient(string baseUrl = "https://localhost:7055")
     {
-        _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+        // Accept the .NET dev HTTPS certificate for localhost
+        var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+        {
+            // Only trust localhost connections
+            if (message.RequestUri?.Host == "localhost") return true;
+            return errors == System.Net.Security.SslPolicyErrors.None;
+        };
+        _httpClient = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
     }
 
     // == Check Auth Status == //
