@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="PlaylistBuilder.Api/PlaylistBuilder.Api.csproj" />
+  <Project Path="PlaylistBuilder.Core/PlaylistBuilder.Core.csproj" />
+  <Project Path="PlaylistBuilder.Cli/PlaylistBuilder.Cli.csproj" />
+  <Project Path="PlaylistBuilder.Tests/PlaylistBuilder.Tests.csproj" />
 </Solution>
