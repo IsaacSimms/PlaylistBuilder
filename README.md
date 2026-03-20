@@ -21,7 +21,7 @@ dotnet build
 ### 2. Create a Spotify Developer application
 
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and create a new app.
-2. Set the **Redirect URI** to `http://localhost:5263/api/spotify/auth/callback`.
+2. Set the **Redirect URI** to `https://localhost:7055/api/spotify/auth/callback`.
 3. Note your **Client ID** and **Client Secret**.
 
 ### 3. Configure API credentials
@@ -54,10 +54,10 @@ $env:Anthropic__ApiKey = "your-anthropic-api-key"
 ### 1. Start the API server
 
 ```bash
-dotnet run --project PlaylistBuilder.Api
+dotnet run --project PlaylistBuilder.Api --launch-profile https
 ```
 
-The API runs on `http://localhost:5263`. Swagger UI is available at `http://localhost:5263/swagger` during development.
+The API runs on `https://localhost:7055`. Swagger UI is available at `https://localhost:7055/swagger` during development.
 
 ### 2. Run the CLI
 

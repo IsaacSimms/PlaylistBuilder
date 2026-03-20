@@ -17,7 +17,7 @@ public class ApiClient
         _httpClient = httpClient;
     }
 
-    public ApiClient(string baseUrl = "http://localhost:5263")
+    public ApiClient(string baseUrl = "https://localhost:7055")
     {
         _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
     }
