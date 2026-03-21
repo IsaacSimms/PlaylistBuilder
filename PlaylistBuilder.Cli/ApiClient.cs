@@ -17,7 +17,7 @@ public class ApiClient
         _httpClient = httpClient;
     }
 
-    public ApiClient(string baseUrl = "https://localhost:7055")
+    public ApiClient(string baseUrl = "http://127.0.0.1:5263")
     {
         // Accept the .NET dev HTTPS certificate for localhost
         var handler = new HttpClientHandler();

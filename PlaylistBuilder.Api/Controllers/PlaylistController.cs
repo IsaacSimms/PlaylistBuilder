@@ -52,11 +52,4 @@ public class PlaylistController : ControllerBase
 
         return Ok(result);
     }
-
-    // == Health Endpoint == //
-    [HttpGet("/api/health")]
-    public IActionResult Health()
-    {
-        return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
-    }
 }

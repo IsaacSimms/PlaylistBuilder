@@ -131,11 +131,19 @@ public class PlaylistControllerTests
         body.NewPlaylistUrl.Should().BeNull(); // Analyze only
     }
 
+}
+
+// == HealthController Tests == //
+public class HealthControllerTests
+{
     [Fact]
-    public async Task Health_ReturnsOk()
+    public void Health_ReturnsOk()
     {
+        // Arrange
+        var controller = new HealthController();
+
         // Act
-        var result = _controller.Health();
+        var result = controller.Health();
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;

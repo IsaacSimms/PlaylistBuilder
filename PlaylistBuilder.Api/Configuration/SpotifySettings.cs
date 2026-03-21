@@ -5,5 +5,5 @@ public class SpotifySettings
 {
     public string ClientId { get; set; } = string.Empty;
     public string ClientSecret { get; set; } = string.Empty;
-    public string RedirectUri { get; set; } = "https://localhost:7055/api/spotify/auth/callback";
+    public string RedirectUri { get; set; } = "http://127.0.0.1:5263/api/spotify/auth/callback";
 }

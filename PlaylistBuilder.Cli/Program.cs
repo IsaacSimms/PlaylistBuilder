@@ -18,7 +18,7 @@ var apiClient = new ApiClient();
 ConsoleHelper.WriteInfo("Connecting to PlaylistBuilder API...");
 if (!await apiClient.IsHealthyAsync())
 {
-    ConsoleHelper.WriteError("Cannot connect to the API. Make sure it's running on https://localhost:7055");
+    ConsoleHelper.WriteError("Cannot connect to the API. Make sure it's running on http://127.0.0.1:5263");
     ConsoleHelper.WriteInfo("Start it with: dotnet run --project PlaylistBuilder.Api");
     return 1;
 }
