@@ -41,7 +41,7 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(recommendations);
 
         // Act
@@ -69,7 +69,7 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(recommendations);
 
         // Act
@@ -97,8 +97,8 @@ public class PlaylistOrchestratorTests
 
         List<string>? capturedExcludeList = null;
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
-            .Callback<PlaylistMetadata, string, List<string>, int>((_, _, exclude, _) => capturedExcludeList = exclude)
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
+            .Callback<PlaylistMetadata, string, List<string>, int, string?>((_, _, exclude, _, _) => capturedExcludeList = exclude)
             .ReturnsAsync(recommendations);
 
         // Act
@@ -112,19 +112,23 @@ public class PlaylistOrchestratorTests
     }
 
     [Fact]
-    public async Task AnalyzePlaylist_WhenPlaylistNotFound_ReturnsError()
+    public async Task AnalyzePlaylist_WhenPlaylistNotFoundAndNoHistory_ReturnsError()
     {
         // Arrange
         var request = TestData.CreateAnalyzeRequest("Nonexistent Playlist");
         _spotifyServiceMock.Setup(s => s.SearchPlaylistByNameAsync("Nonexistent Playlist"))
             .ReturnsAsync((SpotifyPlaylist?)null);
+        _spotifyServiceMock.Setup(s => s.GetRecentlyPlayedAsync(It.IsAny<int>()))
+            .ReturnsAsync(new List<SpotifyTrack>());
+        _spotifyServiceMock.Setup(s => s.GetTopTracksAsync(It.IsAny<int>()))
+            .ReturnsAsync(new List<SpotifyTrack>());
 
         // Act
         var result = await _orchestrator.AnalyzePlaylistAsync(request);
 
         // Assert
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not found");
+        result.ErrorMessage.Should().Contain("listening history");
     }
 
     [Fact]
@@ -144,7 +148,7 @@ public class PlaylistOrchestratorTests
             .Callback(() => callOrder.Add("GetAudioFeatures"))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .Callback(() => callOrder.Add("GetRecommendations"))
             .ReturnsAsync(recommendations);
 
@@ -171,7 +175,7 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(recommendations);
 
         // Each recommendation resolves to a Spotify track
@@ -213,10 +217,10 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(recommendations);
 
-        // First and third recommendations found, second returns null (not found)
+        // First and third recommendations found
         _spotifyServiceMock.Setup(s => s.SearchTrackAsync("Rec Song 1", "Rec Artist 1"))
             .ReturnsAsync(TestData.CreateTrack("rec1", "Rec Song 1", "Rec Artist 1"));
         _spotifyServiceMock.Setup(s => s.SearchTrackAsync("Rec Song 2", "Rec Artist 2"))
@@ -251,7 +255,7 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(new List<TrackRecommendation>());
 
         // Act
@@ -278,7 +282,7 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
             .ReturnsAsync(audioFeatures);
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
             .ReturnsAsync(recommendations);
 
         // All searches return null
@@ -315,8 +319,8 @@ public class PlaylistOrchestratorTests
 
         PlaylistMetadata? capturedMetadata = null;
         _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
-                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20))
-            .Callback<PlaylistMetadata, string, List<string>, int>((meta, _, _, _) => capturedMetadata = meta)
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
+            .Callback<PlaylistMetadata, string, List<string>, int, string?>((meta, _, _, _, _) => capturedMetadata = meta)
             .ReturnsAsync(recommendations);
 
         // Act
@@ -328,5 +332,99 @@ public class PlaylistOrchestratorTests
         capturedMetadata.AvgEnergy.Should().BeApproximately(0.7f, 0.01f);
         capturedMetadata.AvgTempo.Should().BeApproximately(130f, 0.01f);
         capturedMetadata.TrackCount.Should().Be(2);
+    }
+
+    // == Model Selection Tests == //
+
+    [Fact]
+    public async Task AnalyzePlaylist_WithModelId_PassesModelToClaudeService()
+    {
+        // Arrange
+        var request = TestData.CreateAnalyzeRequest("EDM Lo-Fi Mix");
+        request.ModelId = "claude-3-opus-20240229";
+
+        var playlist = TestData.CreatePlaylist(3);
+        var audioFeatures = TestData.CreateAudioFeaturesList(3);
+        var recommendations = TestData.CreateRecommendations(5);
+
+        _spotifyServiceMock.Setup(s => s.SearchPlaylistByNameAsync("EDM Lo-Fi Mix"))
+            .ReturnsAsync(playlist);
+        _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
+            .ReturnsAsync(audioFeatures);
+
+        string? capturedModelId = null;
+        _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
+            .Callback<PlaylistMetadata, string, List<string>, int, string?>((_, _, _, _, model) => capturedModelId = model)
+            .ReturnsAsync(recommendations);
+
+        // Act
+        await _orchestrator.AnalyzePlaylistAsync(request);
+
+        // Assert
+        capturedModelId.Should().Be("claude-3-opus-20240229");
+    }
+
+    [Fact]
+    public async Task AnalyzePlaylist_WithoutModelId_PassesNullToClaudeService()
+    {
+        // Arrange
+        var request = TestData.CreateAnalyzeRequest("EDM Lo-Fi Mix");
+
+        var playlist = TestData.CreatePlaylist(3);
+        var audioFeatures = TestData.CreateAudioFeaturesList(3);
+        var recommendations = TestData.CreateRecommendations(5);
+
+        _spotifyServiceMock.Setup(s => s.SearchPlaylistByNameAsync("EDM Lo-Fi Mix"))
+            .ReturnsAsync(playlist);
+        _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
+            .ReturnsAsync(audioFeatures);
+
+        string? capturedModelId = "not-null-sentinel";
+        _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
+            .Callback<PlaylistMetadata, string, List<string>, int, string?>((_, _, _, _, model) => capturedModelId = model)
+            .ReturnsAsync(recommendations);
+
+        // Act
+        await _orchestrator.AnalyzePlaylistAsync(request);
+
+        // Assert
+        capturedModelId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task BuildPlaylist_WithModelId_PassesModelThroughToClaudeService()
+    {
+        // Arrange
+        var request = TestData.CreateAnalyzeRequest("EDM Lo-Fi Mix");
+        request.ModelId = "claude-3-5-haiku-20241022";
+
+        var playlist = TestData.CreatePlaylist(3);
+        var audioFeatures = TestData.CreateAudioFeaturesList(3);
+        var recommendations = TestData.CreateRecommendations(3);
+
+        _spotifyServiceMock.Setup(s => s.SearchPlaylistByNameAsync("EDM Lo-Fi Mix"))
+            .ReturnsAsync(playlist);
+        _spotifyServiceMock.Setup(s => s.GetAudioFeaturesAsync(It.IsAny<List<string>>()))
+            .ReturnsAsync(audioFeatures);
+
+        string? capturedModelId = null;
+        _claudeServiceMock.Setup(c => c.GetRecommendationsAsync(
+                It.IsAny<PlaylistMetadata>(), It.IsAny<string>(), It.IsAny<List<string>>(), 20, It.IsAny<string?>()))
+            .Callback<PlaylistMetadata, string, List<string>, int, string?>((_, _, _, _, model) => capturedModelId = model)
+            .ReturnsAsync(recommendations);
+
+        _spotifyServiceMock.Setup(s => s.SearchTrackAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(TestData.CreateTrack("rec1", "Rec Song 1", "Rec Artist 1"));
+        _spotifyServiceMock.Setup(s => s.CreatePlaylistAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>()))
+            .ReturnsAsync("newplaylist789");
+
+        // Act
+        await _orchestrator.BuildPlaylistAsync(request);
+
+        // Assert
+        capturedModelId.Should().Be("claude-3-5-haiku-20241022");
     }
 }

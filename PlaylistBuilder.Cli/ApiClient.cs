@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using PlaylistBuilder.Core.DTOs.Requests;
 using PlaylistBuilder.Core.DTOs.Responses;
+using PlaylistBuilder.Core.Models;
 
 namespace PlaylistBuilder.Cli;
 
@@ -75,6 +76,22 @@ public class ApiClient
         catch
         {
             return false;
+        }
+    }
+
+    // == Get Available Models == //
+    public async Task<List<SupportedModel>?> GetModelsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("/api/models");
+            if (!response.IsSuccessStatusCode) return null;
+
+            return await response.Content.ReadFromJsonAsync<List<SupportedModel>>();
+        }
+        catch
+        {
+            return null;
         }
     }
 

@@ -39,6 +39,16 @@ public class FakeSpotifyService : ISpotifyService
         return Task.FromResult("fake_playlist_id");
     }
 
+    public Task<List<SpotifyTrack>> GetRecentlyPlayedAsync(int limit = 50)
+    {
+        return Task.FromResult(TestData.CreatePlaylist(5).Tracks);
+    }
+
+    public Task<List<SpotifyTrack>> GetTopTracksAsync(int limit = 50)
+    {
+        return Task.FromResult(TestData.CreatePlaylist(5).Tracks);
+    }
+
     public Task<string> GetCurrentUserIdAsync()
     {
         return Task.FromResult("fakeuser");

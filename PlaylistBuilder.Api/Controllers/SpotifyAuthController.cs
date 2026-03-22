@@ -15,14 +15,16 @@ public class SpotifyAuthController : ControllerBase
     private readonly SpotifySettings _settings;
     private readonly SpotifyTokenStore _tokenStore;
 
-    // Scopes needed: read playlists + modify playlists
+    // Scopes needed: read playlists + modify playlists + listening history
     private static readonly string[] Scopes = new[]
     {
         "playlist-read-private",
         "playlist-read-collaborative",
         "playlist-modify-public",
         "playlist-modify-private",
-        "user-read-private"
+        "user-read-private",
+        "user-read-recently-played",
+        "user-top-read"
     };
 
     public SpotifyAuthController(IOptions<SpotifySettings> settings, SpotifyTokenStore tokenStore)

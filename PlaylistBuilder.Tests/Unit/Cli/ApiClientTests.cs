@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using PlaylistBuilder.Cli;
 using PlaylistBuilder.Core.DTOs.Requests;
+using PlaylistBuilder.Core.Models;
 
 namespace PlaylistBuilder.Tests.Unit.Cli;
 
@@ -152,5 +153,110 @@ public class ApiClientTests
 
         // Assert
         capturedRequest!.RequestUri!.PathAndQuery.Should().Be("/api/playlist/analyze");
+    }
+
+    // == Model Selection Tests == //
+
+    [Fact]
+    public async Task AnalyzeAsync_WithModelId_SendsModelInRequestBody()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var client = CreateClientWithHandler(req =>
+        {
+            capturedRequest = req;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(new { success = true })
+            };
+        });
+
+        var request = new AnalyzePlaylistRequest
+        {
+            PlaylistIdentifier = "EDM Lo-Fi Mix",
+            UserPrompt = "Make it more upbeat",
+            TrackCount = 20,
+            ModelId = "claude-3-opus-20240229"
+        };
+
+        // Act
+        await client.AnalyzeAsync(request);
+
+        // Assert
+        var body = await capturedRequest!.Content!.ReadFromJsonAsync<AnalyzePlaylistRequest>();
+        body!.ModelId.Should().Be("claude-3-opus-20240229");
+    }
+
+    [Fact]
+    public async Task BuildAsync_WithModelId_SendsModelInRequestBody()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var client = CreateClientWithHandler(req =>
+        {
+            capturedRequest = req;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(new { success = true, newPlaylistId = "test123" })
+            };
+        });
+
+        var request = new AnalyzePlaylistRequest
+        {
+            PlaylistIdentifier = "EDM Lo-Fi Mix",
+            UserPrompt = "Make it chill",
+            TrackCount = 15,
+            ModelId = "claude-3-5-haiku-20241022"
+        };
+
+        // Act
+        await client.BuildAsync(request);
+
+        // Assert
+        var body = await capturedRequest!.Content!.ReadFromJsonAsync<AnalyzePlaylistRequest>();
+        body!.ModelId.Should().Be("claude-3-5-haiku-20241022");
+    }
+
+    [Fact]
+    public async Task GetModelsAsync_ReturnsModelList()
+    {
+        // Arrange
+        var models = new[]
+        {
+            new { id = "claude-sonnet-4-6", displayName = "Claude Sonnet 4 (Latest)", isDefault = true },
+            new { id = "claude-3-5-haiku-20241022", displayName = "Claude 3.5 Haiku (Fast)", isDefault = false }
+        };
+
+        var client = CreateClientWithHandler(req =>
+        {
+            req.RequestUri!.PathAndQuery.Should().Be("/api/models");
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = JsonContent.Create(models)
+            };
+        });
+
+        // Act
+        var result = await client.GetModelsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result![0].Id.Should().Be("claude-sonnet-4-6");
+        result[0].IsDefault.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetModelsAsync_WhenApiFails_ReturnsNull()
+    {
+        // Arrange
+        var client = CreateClientWithHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        // Act
+        var result = await client.GetModelsAsync();
+
+        // Assert
+        result.Should().BeNull();
     }
 }

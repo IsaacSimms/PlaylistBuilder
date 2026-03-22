@@ -5,6 +5,7 @@ using Anthropic.SDK.Constants;
 using Anthropic.SDK.Messaging;
 using Microsoft.Extensions.Options;
 using PlaylistBuilder.Api.Configuration;
+using PlaylistBuilder.Core;
 using PlaylistBuilder.Core.Interfaces;
 using PlaylistBuilder.Core.Models;
 
@@ -14,6 +15,7 @@ namespace PlaylistBuilder.Api.Services;
 public class ClaudeService : IClaudeService
 {
     private readonly AnthropicClient _client;
+    private readonly AnthropicSettings _settings;
     private readonly ILogger<ClaudeService> _logger;
 
     // Matches a JSON array in Claude's response text
@@ -23,7 +25,8 @@ public class ClaudeService : IClaudeService
 
     public ClaudeService(IOptions<AnthropicSettings> settings, ILogger<ClaudeService> logger)
     {
-        _client = new AnthropicClient(settings.Value.ApiKey);
+        _settings = settings.Value;
+        _client = new AnthropicClient(_settings.ApiKey);
         _logger = logger;
     }
 
@@ -31,8 +34,12 @@ public class ClaudeService : IClaudeService
         PlaylistMetadata metadata,
         string userPrompt,
         List<string> excludeTrackNames,
-        int trackCount = 20)
+        int trackCount = 20,
+        string? modelId = null)
     {
+        // Resolve model: request → settings → hardcoded default
+        var resolvedModel = SupportedModels.Resolve(modelId ?? _settings.ModelId);
+
         var prompt = BuildPrompt(metadata, userPrompt, excludeTrackNames, trackCount);
 
         var parameters = new MessageParameters
@@ -42,7 +49,7 @@ public class ClaudeService : IClaudeService
                 new(RoleType.User, prompt)
             },
             MaxTokens = 4096,
-            Model = AnthropicModels.Claude46Sonnet,
+            Model = resolvedModel,
             Stream = false,
             Temperature = 0.7m,
             System = new List<SystemMessage>

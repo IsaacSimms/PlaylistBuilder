@@ -17,4 +17,9 @@ public class AnalyzePlaylistRequest
     /// Number of tracks to recommend. Defaults to 20.
     /// </summary>
     public int TrackCount { get; set; } = 20;
+
+    /// <summary>
+    /// Anthropic model ID to use for recommendations. Null uses the server default.
+    /// </summary>
+    public string? ModelId { get; set; }
 }

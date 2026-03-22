@@ -36,6 +36,16 @@ public interface ISpotifyService
     Task<string> GetCurrentUserIdAsync();
 
     /// <summary>
+    /// Fetches the user's recently played tracks.
+    /// </summary>
+    Task<List<SpotifyTrack>> GetRecentlyPlayedAsync(int limit = 50);
+
+    /// <summary>
+    /// Fetches the user's top tracks based on listening history.
+    /// </summary>
+    Task<List<SpotifyTrack>> GetTopTracksAsync(int limit = 50);
+
+    /// <summary>
     /// Checks if the user is currently authenticated with Spotify.
     /// </summary>
     bool IsAuthenticated { get; }

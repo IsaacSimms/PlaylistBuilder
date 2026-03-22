@@ -6,12 +6,30 @@ using PlaylistBuilder.Core.DTOs.Requests;
 if (args.Length == 0)
 {
     ConsoleHelper.WriteHeader("PlaylistBuilder CLI");
-    ConsoleHelper.WriteInfo("Usage: playlistbuilder <prompt>");
+    ConsoleHelper.WriteInfo("Usage: playlistbuilder <prompt> [--model <model-id>]");
     ConsoleHelper.WriteInfo("Example: playlistbuilder \"Make a playlist like EDM Lo-Fi Mix but with different songs\"");
+    ConsoleHelper.WriteInfo("         playlistbuilder --model claude-3-opus-20240229 \"Chill lo-fi beats\"");
     return 1;
 }
 
-var userPrompt = string.Join(" ", args);
+// == Parse --model flag from args == //
+string? cliModelId = null;
+var argList = new List<string>(args);
+var modelFlagIndex = argList.IndexOf("--model");
+if (modelFlagIndex >= 0 && modelFlagIndex + 1 < argList.Count)
+{
+    cliModelId = argList[modelFlagIndex + 1];
+    argList.RemoveAt(modelFlagIndex + 1);
+    argList.RemoveAt(modelFlagIndex);
+}
+
+var userPrompt = string.Join(" ", argList);
+if (string.IsNullOrWhiteSpace(userPrompt))
+{
+    ConsoleHelper.WriteError("A prompt is required after the --model flag.");
+    return 1;
+}
+
 var apiClient = new ApiClient();
 
 // Step 1: Check API health
@@ -49,16 +67,28 @@ if (!await apiClient.IsAuthenticatedAsync())
     ConsoleHelper.WriteSuccess("Authenticated with Spotify!");
 }
 
-// Step 3: Parse playlist identifier from the prompt
+// Step 3: Select AI model
+string? selectedModelId = cliModelId;
+if (selectedModelId == null)
+{
+    var models = await apiClient.GetModelsAsync();
+    if (models != null && models.Count > 0)
+    {
+        selectedModelId = ConsoleHelper.SelectModel(models);
+    }
+}
+
+// Step 4: Parse playlist identifier from the prompt
 // The API/Claude will handle extracting the playlist name from the natural language prompt
 var request = new AnalyzePlaylistRequest
 {
     PlaylistIdentifier = ExtractPlaylistIdentifier(userPrompt),
     UserPrompt = userPrompt,
-    TrackCount = 20
+    TrackCount = 20,
+    ModelId = selectedModelId
 };
 
-// Step 4: Analyze the playlist
+// Step 5: Analyze the playlist
 ConsoleHelper.WriteInfo($"\nAnalyzing playlist: \"{request.PlaylistIdentifier}\"...");
 var analyzeResult = await apiClient.AnalyzeAsync(request);
 
@@ -70,14 +100,14 @@ if (analyzeResult == null || !analyzeResult.Success)
 
 ConsoleHelper.DisplayRecommendations(analyzeResult);
 
-// Step 5: Ask to create playlist
+// Step 6: Ask to create playlist
 if (!ConsoleHelper.AskConfirmation("Create this playlist on Spotify?"))
 {
     ConsoleHelper.WriteInfo("Cancelled. No playlist was created.");
     return 0;
 }
 
-// Step 6: Build the playlist
+// Step 7: Build the playlist
 ConsoleHelper.WriteInfo("\nCreating playlist on Spotify...");
 var buildResult = await apiClient.BuildAsync(request);
 

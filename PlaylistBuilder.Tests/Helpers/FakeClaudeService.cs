@@ -13,7 +13,8 @@ public class FakeClaudeService : IClaudeService
         PlaylistMetadata metadata,
         string userPrompt,
         List<string> excludeTrackNames,
-        int trackCount = 20)
+        int trackCount = 20,
+        string? modelId = null)
     {
         var recommendations = Enumerable.Range(1, trackCount)
             .Select(i => new TrackRecommendation

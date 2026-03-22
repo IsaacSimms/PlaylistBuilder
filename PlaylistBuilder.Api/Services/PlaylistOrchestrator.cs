@@ -25,28 +25,43 @@ public class PlaylistOrchestrator : IPlaylistOrchestrator
 
     public async Task<AnalyzePlaylistResponse> AnalyzePlaylistAsync(AnalyzePlaylistRequest request)
     {
-        // Step 1: Fetch the playlist (by URL or name search)
+        List<SpotifyTrack> tracks;
+        string sourceName;
+
+        // Step 1: Try to resolve a playlist, fall back to listening history
         var playlist = await ResolvePlaylistAsync(request.PlaylistIdentifier);
-        if (playlist is null)
+        if (playlist is not null && playlist.Tracks.Count > 0)
         {
-            return new AnalyzePlaylistResponse
+            tracks = playlist.Tracks;
+            sourceName = playlist.Name;
+        }
+        else
+        {
+            // No playlist found — use the user's listening history instead
+            tracks = await GetListeningHistoryAsync();
+            sourceName = "Your Listening History";
+
+            if (tracks.Count == 0)
             {
-                Success = false,
-                ErrorMessage = $"Playlist not found: '{request.PlaylistIdentifier}'"
-            };
+                return new AnalyzePlaylistResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Could not find a matching playlist or any listening history on your Spotify account."
+                };
+            }
         }
 
         // Step 2: Get audio features for all tracks
-        var trackIds = playlist.Tracks.Select(t => t.Id).ToList();
+        var trackIds = tracks.Select(t => t.Id).ToList();
         var audioFeatures = await _spotifyService.GetAudioFeaturesAsync(trackIds);
 
-        // Step 3: Build metadata from playlist + audio features
-        var metadata = BuildMetadata(playlist, audioFeatures);
+        // Step 3: Build metadata from tracks + audio features
+        var metadata = BuildMetadataFromTracks(sourceName, tracks, audioFeatures);
 
         // Step 4: Get recommendations from Claude
-        var excludeList = playlist.Tracks.Select(t => t.Name).ToList();
+        var excludeList = tracks.Select(t => t.Name).ToList();
         var recommendations = await _claudeService.GetRecommendationsAsync(
-            metadata, request.UserPrompt, excludeList, request.TrackCount);
+            metadata, request.UserPrompt, excludeList, request.TrackCount, request.ModelId);
 
         return new AnalyzePlaylistResponse
         {
@@ -123,14 +138,40 @@ public class PlaylistOrchestrator : IPlaylistOrchestrator
         return await _spotifyService.SearchPlaylistByNameAsync(identifier);
     }
 
-    // == BuildMetadata == //
+    // == GetListeningHistory == //
+    private async Task<List<SpotifyTrack>> GetListeningHistoryAsync()
+    {
+        // Combine recently played and top tracks for richer context
+        var recentlyPlayed = await _spotifyService.GetRecentlyPlayedAsync(50);
+        var topTracks = await _spotifyService.GetTopTracksAsync(50);
+
+        // Merge and deduplicate, preferring top tracks first
+        var seen = new HashSet<string>();
+        var combined = new List<SpotifyTrack>();
+
+        foreach (var track in topTracks.Concat(recentlyPlayed))
+        {
+            if (seen.Add(track.Id))
+                combined.Add(track);
+        }
+
+        return combined;
+    }
+
+    // == BuildMetadata (from playlist) == //
     private static PlaylistMetadata BuildMetadata(SpotifyPlaylist playlist, List<AudioFeatures> audioFeatures)
+    {
+        return BuildMetadataFromTracks(playlist.Name, playlist.Tracks, audioFeatures);
+    }
+
+    // == BuildMetadata (from track list) == //
+    private static PlaylistMetadata BuildMetadataFromTracks(string name, List<SpotifyTrack> tracks, List<AudioFeatures> audioFeatures)
     {
         var metadata = new PlaylistMetadata
         {
-            PlaylistName = playlist.Name,
-            TrackCount = playlist.Tracks.Count,
-            TrackNames = playlist.Tracks.Select(t => t.Name).ToList()
+            PlaylistName = name,
+            TrackCount = tracks.Count,
+            TrackNames = tracks.Select(t => $"{t.Name} by {string.Join(", ", t.Artists)}").ToList()
         };
 
         if (audioFeatures.Count > 0)

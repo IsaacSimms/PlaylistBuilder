@@ -1,5 +1,6 @@
 using PlaylistBuilder.Core.DTOs.Responses;
 using PlaylistBuilder.Core.Models;
+using PlaylistBuilder.Core.Models;
 
 namespace PlaylistBuilder.Cli;
 
@@ -97,5 +98,41 @@ public static class ConsoleHelper
 
         var key = Console.ReadLine()?.Trim().ToLower();
         return key == "y" || key == "yes";
+    }
+
+    // == Model Selection Menu == //
+    public static string? SelectModel(List<SupportedModel> models)
+    {
+        WriteHeader("Select AI Model");
+
+        for (int i = 0; i < models.Count; i++)
+        {
+            var model = models[i];
+            var defaultTag = model.IsDefault ? " (default)" : "";
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write($"  {i + 1}. ");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(model.DisplayName);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine(defaultTag);
+        }
+
+        Console.ResetColor();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write($"\nChoose model (1-{models.Count}, or Enter for default): ");
+        Console.ResetColor();
+
+        var input = Console.ReadLine()?.Trim();
+
+        // Enter = use default
+        if (string.IsNullOrEmpty(input))
+            return null;
+
+        if (int.TryParse(input, out var choice) && choice >= 1 && choice <= models.Count)
+            return models[choice - 1].Id;
+
+        WriteWarning("Invalid selection — using default model.");
+        return null;
     }
 }

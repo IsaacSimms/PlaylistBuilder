@@ -94,6 +94,31 @@ public class SpotifyService : ISpotifyService
         return newPlaylist.Id!;
     }
 
+    // == GetRecentlyPlayed == //
+    public async Task<List<SpotifyTrack>> GetRecentlyPlayedAsync(int limit = 50)
+    {
+        var request = new PlayerRecentlyPlayedRequest { Limit = limit };
+        var response = await _client.Player.GetRecentlyPlayed(request);
+
+        return response.Items?
+            .Where(item => item.Track is FullTrack)
+            .Select(item => MapTrack((FullTrack)item.Track))
+            .GroupBy(t => t.Id)        // Deduplicate by track ID
+            .Select(g => g.First())
+            .ToList() ?? new List<SpotifyTrack>();
+    }
+
+    // == GetTopTracks == //
+    public async Task<List<SpotifyTrack>> GetTopTracksAsync(int limit = 50)
+    {
+        var request = new PersonalizationTopRequest { Limit = limit };
+        var response = await _client.Personalization.GetTopTracks(request);
+
+        return response.Items?
+            .Select(MapTrack)
+            .ToList() ?? new List<SpotifyTrack>();
+    }
+
     // == GetCurrentUserId == //
     public async Task<string> GetCurrentUserIdAsync()
     {
