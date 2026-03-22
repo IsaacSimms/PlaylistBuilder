@@ -55,13 +55,37 @@ public class ApiClient
     public async Task<AnalyzePlaylistResponse?> AnalyzeAsync(AnalyzePlaylistRequest request)
     {
         var response = await _httpClient.PostAsJsonAsync("/api/playlist/analyze", request);
-        return await response.Content.ReadFromJsonAsync<AnalyzePlaylistResponse>();
+        return await ReadApiResponseAsync(response);
     }
 
     // == Build Playlist == //
     public async Task<AnalyzePlaylistResponse?> BuildAsync(AnalyzePlaylistRequest request)
     {
         var response = await _httpClient.PostAsJsonAsync("/api/playlist/build", request);
+        return await ReadApiResponseAsync(response);
+    }
+
+    // == Read and Validate API Response == //
+    private static async Task<AnalyzePlaylistResponse?> ReadApiResponseAsync(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            // Try to deserialize as an error response; fall back to raw text
+            try
+            {
+                var errorResult = await response.Content.ReadFromJsonAsync<AnalyzePlaylistResponse>();
+                if (errorResult != null) return errorResult;
+            }
+            catch { /* response body isn't JSON — fall through */ }
+
+            var raw = await response.Content.ReadAsStringAsync();
+            return new AnalyzePlaylistResponse
+            {
+                Success = false,
+                ErrorMessage = $"API returned {(int)response.StatusCode}: {raw[..Math.Min(raw.Length, 200)]}"
+            };
+        }
+
         return await response.Content.ReadFromJsonAsync<AnalyzePlaylistResponse>();
     }
 

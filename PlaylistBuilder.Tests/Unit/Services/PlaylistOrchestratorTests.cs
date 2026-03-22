@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using PlaylistBuilder.Core.DTOs.Requests;
 using PlaylistBuilder.Core.Interfaces;
@@ -19,10 +20,10 @@ public class PlaylistOrchestratorTests
         _spotifyServiceMock = new Mock<ISpotifyService>();
         _claudeServiceMock = new Mock<IClaudeService>();
 
-        // Will fail to compile until PlaylistOrchestrator is implemented
         _orchestrator = new Api.Services.PlaylistOrchestrator(
             _spotifyServiceMock.Object,
-            _claudeServiceMock.Object);
+            _claudeServiceMock.Object,
+            Mock.Of<ILogger<Api.Services.PlaylistOrchestrator>>());
     }
 
     // == Analyze Tests == //
