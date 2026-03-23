@@ -12,11 +12,8 @@ public static class SupportedModels
 {
     public static readonly IReadOnlyList<SupportedModel> All = new List<SupportedModel>
     {
-        new("claude-sonnet-4-6",            "Claude Sonnet 4 (Latest)",  true),
-        new("claude-3-5-sonnet-20241022",   "Claude 3.5 Sonnet",        false),
-        new("claude-3-opus-20240229",       "Claude 3 Opus",            false),
-        new("claude-3-5-haiku-20241022",    "Claude 3.5 Haiku (Fast)",  false),
-        new("claude-3-haiku-20240307",      "Claude 3 Haiku (Fastest)", false),
+        new("claude-sonnet-4-6",            "Claude Sonnet 4.6 (Latest)", true),
+        new("claude-haiku-4-5-20251001",    "Claude Haiku 4.5 (Fast)",    false),
     };
 
     // == Default Model == //

@@ -82,15 +82,38 @@ public class PlaylistOrchestrator : IPlaylistOrchestrator
 
         // Step 4: Get recommendations from Claude
         var excludeList = tracks.Select(t => t.Name).ToList();
-        var recommendations = await _claudeService.GetRecommendationsAsync(
-            metadata, request.UserPrompt, excludeList, request.TrackCount, request.ModelId);
-
-        return new AnalyzePlaylistResponse
+        try
         {
-            Success = true,
-            Metadata = metadata,
-            Recommendations = recommendations
-        };
+            var recommendations = await _claudeService.GetRecommendationsAsync(
+                metadata, request.UserPrompt, excludeList, request.TrackCount, request.ModelId);
+
+            if (recommendations.Count == 0)
+            {
+                return new AnalyzePlaylistResponse
+                {
+                    Success = false,
+                    Metadata = metadata,
+                    ErrorMessage = "Claude returned a response but no song recommendations could be parsed from it."
+                };
+            }
+
+            return new AnalyzePlaylistResponse
+            {
+                Success = true,
+                Metadata = metadata,
+                Recommendations = recommendations
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Claude API call failed");
+            return new AnalyzePlaylistResponse
+            {
+                Success = false,
+                Metadata = metadata,
+                ErrorMessage = $"Claude API error: {ex.Message}"
+            };
+        }
     }
 
     public async Task<AnalyzePlaylistResponse> BuildPlaylistAsync(AnalyzePlaylistRequest request)

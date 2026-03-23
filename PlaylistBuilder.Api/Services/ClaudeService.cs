@@ -18,9 +18,9 @@ public class ClaudeService : IClaudeService
     private readonly AnthropicSettings _settings;
     private readonly ILogger<ClaudeService> _logger;
 
-    // Matches a JSON array in Claude's response text
+    // Matches the outermost JSON array in Claude's response text
     private static readonly Regex JsonArrayRegex = new(
-        @"\[[\s\S]*?\]",
+        @"\[[\s\S]*\]",
         RegexOptions.Compiled);
 
     public ClaudeService(IOptions<AnthropicSettings> settings, ILogger<ClaudeService> logger)
@@ -62,14 +62,16 @@ public class ClaudeService : IClaudeService
         {
             var response = await _client.Messages.GetClaudeMessageAsync(parameters);
             var responseText = response.Message.ToString();
-            _logger.LogDebug("Claude response: {Response}", responseText);
+            _logger.LogInformation("Claude response (first 500 chars): {Response}", responseText[..Math.Min(responseText.Length, 500)]);
 
-            return ParseRecommendations(responseText);
+            var recommendations = ParseRecommendations(responseText);
+            _logger.LogInformation("Parsed {Count} recommendations from Claude response", recommendations.Count);
+            return recommendations;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get recommendations from Claude");
-            return new List<TrackRecommendation>();
+            _logger.LogError(ex, "Failed to get recommendations from Claude. Model: {Model}", resolvedModel);
+            throw; // Let the orchestrator handle the error with a meaningful message
         }
     }
 
