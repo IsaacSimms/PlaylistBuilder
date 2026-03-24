@@ -13,9 +13,9 @@ public class PlaylistOrchestrator : IPlaylistOrchestrator
     private readonly IClaudeService _claudeService;
     private readonly ILogger<PlaylistOrchestrator> _logger;
 
-    // Matches Spotify playlist URLs like https://open.spotify.com/playlist/abc123?si=xyz
+    // Matches Spotify playlist URLs, including intl variants like /intl-en/playlist/abc123
     private static readonly Regex SpotifyUrlRegex = new(
-        @"https?://open\.spotify\.com/playlist/([a-zA-Z0-9]+)",
+        @"https?://open\.spotify\.com/(?:intl-[a-z]{2}/)?playlist/([a-zA-Z0-9]+)",
         RegexOptions.Compiled);
 
     public PlaylistOrchestrator(ISpotifyService spotifyService, IClaudeService claudeService, ILogger<PlaylistOrchestrator> logger)
@@ -196,10 +196,27 @@ public class PlaylistOrchestrator : IPlaylistOrchestrator
         if (match.Success)
         {
             var playlistId = match.Groups[1].Value;
-            return await _spotifyService.GetPlaylistAsync(playlistId);
+            _logger.LogInformation("Extracted playlist ID: {PlaylistId} from URL", playlistId);
+            try
+            {
+                return await _spotifyService.GetPlaylistAsync(playlistId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Playlist ID {PlaylistId} not found via direct lookup, falling back to search", playlistId);
+            }
         }
 
-        return await _spotifyService.SearchPlaylistByNameAsync(identifier);
+        // Fall back to name-based search
+        try
+        {
+            return await _spotifyService.SearchPlaylistByNameAsync(identifier);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Playlist search failed for identifier: {Identifier}", identifier);
+            return null; // Let caller fall back to listening history
+        }
     }
 
     // == GetListeningHistory == //

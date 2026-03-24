@@ -123,9 +123,9 @@ return 0;
 // == Helper: Extract Playlist Identifier == //
 static string ExtractPlaylistIdentifier(string prompt)
 {
-    // Check for Spotify URL in the prompt
+    // Check for Spotify URL in the prompt (handles intl variants like /intl-en/playlist/...)
     var urlMatch = System.Text.RegularExpressions.Regex.Match(
-        prompt, @"https?://open\.spotify\.com/playlist/[a-zA-Z0-9]+(\?[^\s]*)?");
+        prompt, @"https?://open\.spotify\.com/(?:intl-[a-z]{2}/)?playlist/[a-zA-Z0-9]+(\?[^\s]*)?");
     if (urlMatch.Success)
         return urlMatch.Value;
 
