@@ -1,3 +1,5 @@
+///// store spotify api settings /////
+
 namespace PlaylistBuilder.Api.Configuration;
 
 // == SpotifySettings == //

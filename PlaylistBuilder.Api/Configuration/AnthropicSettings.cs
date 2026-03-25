@@ -1,3 +1,5 @@
+///// stores Anthropic API settings, such as the API key and default model ID. /////
+
 namespace PlaylistBuilder.Api.Configuration;
 
 // == AnthropicSettings == //
